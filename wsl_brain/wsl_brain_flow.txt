@@ -1,0 +1,10 @@
+'''
+1. main.py starts up.
+2. It loads config.py to find Redis and API keys.
+3. It spins up Redis connection.
+4. It launches the 4 Actors (Perception, Audio, Cognition, Action).
+5. Perception Actor starts reading Shared Memory from Windows.
+6. Audio Actor waits for VAD chunks.
+7. Cognition Actor waits for intent.
+8. Action Actor connects to Arrakis/Windows.
+'''

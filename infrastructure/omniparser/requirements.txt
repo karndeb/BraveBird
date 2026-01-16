@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+torch
+torchvision
+ultralytics
+timm
+einops
+transformers
+accelerate
+pillow
+numpy
+scipy

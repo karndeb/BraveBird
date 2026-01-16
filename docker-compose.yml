@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------
+  # 1. The Nervous System (Event Bus)
+  # ----------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: bravebird_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./infrastructure/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    restart: always
+
+  # ----------------------------------------
+  # 2. Visual Grounding Service (UI-Ins)
+  # ----------------------------------------
+  ui-ins:
+    build: 
+      context: ./infrastructure/ui_ins
+      dockerfile: Dockerfile
+    container_name: bravebird_ui_ins
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data/weights:/app/weights
+      - ./data/datasets:/app/datasets # For mounting Flywheel data
+    environment:
+      - MODEL_PATH=Qwen/Qwen2.5-VL-7B-Instruct
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: on-failure
+
+  # ----------------------------------------
+  # 3. Screen Parsing Service (OmniParser)
+  # ----------------------------------------
+  omniparser:
+    build: 
+      context: ./infrastructure/omniparser
+      dockerfile: Dockerfile
+    container_name: bravebird_omniparser
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./data/weights/omniparser:/app/weights
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: on-failure
+
+  # ----------------------------------------
+  # 4. Linux Sandbox (Arrakis)
+  # ----------------------------------------
+  arrakis:
+    build: 
+      context: ./infrastructure/arrakis
+      dockerfile: Dockerfile
+    container_name: bravebird_arrakis
+    privileged: true
+    ports:
+      - "7000:7000"
+      # Expose VNC ports range for clients
+      - "5900-5910:5900-5910"
+    volumes:
+      - /dev/kvm:/dev/kvm
+      - ./data/arrakis_storage:/storage
+    restart: unless-stopped
+    
+  # ----------------------------------------
+  # 4. Windows Sandbox (OmniBox) [NEW]
+  # ----------------------------------------
+  omnibox:
+    build: 
+      context: ./infrastructure/omnibox
+      dockerfile: Dockerfile
+    container_name: bravebird_omnibox
+    privileged: true # Required for KVM
+    ports:
+      - "8006:8006" # NoVNC
+      - "5000:5000" # Agent API
+    volumes:
+      - /dev/kvm:/dev/kvm
+      - ./data/omnibox_storage:/storage
+      - ./data/iso/custom.iso:/custom.iso # User must place ISO here
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - RAM_SIZE=8G
+      - CPU_CORES=4
+    restart: unless-stopped

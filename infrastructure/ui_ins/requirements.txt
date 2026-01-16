@@ -1,0 +1,9 @@
+vllm>=0.6.0
+transformers>=4.37.0
+accelerate
+fastapi
+uvicorn
+pydantic
+pillow
+numpy
+qwen-vl-utils

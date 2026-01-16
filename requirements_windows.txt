@@ -1,0 +1,18 @@
+# --- Core ---
+pydantic>=2.0
+pydantic-settings
+requests
+redis
+protobuf
+grpcio-tools
+
+# --- Capture & Input ---
+mss                 # Fast screen capture
+pynput              # Mouse/Keyboard hooks
+pywinauto           # Accessibility scraper
+pyautogui           # Input injection (Bridge)
+
+# --- Audio ---
+pyaudio             # Microphone access
+webrtcvad           # Voice Activity Detection
+numpy

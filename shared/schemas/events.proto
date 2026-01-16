@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package bravebird;
+
+// The Wire Protocol. Defines the binary messages exchanged over Redis/ZeroMQ
+// We use Protocol Buffers (Proto3) because JSON serialization is too slow for real-time 60FPS events. Proto3 is ~10x faster and significantly smaller in payload size.
+// ------------------------------------------------------------------
+// VIDEO STREAM (Zero-Copy Pointer)
+// ------------------------------------------------------------------
+// Instead of sending pixels, we send a pointer to the Shared Memory block.
+message VisualFrame {
+    int64 timestamp = 1;       // Unix timestamp (ms)
+    int32 width = 2;
+    int32 height = 3;
+    string shm_handle = 4;     // Name of the memory mapped file (e.g. "Local\BB_Video")
+    int32 shm_offset = 5;      // Byte offset where this frame starts
+    int32 frame_size = 6;      // Total bytes
+    string encoding = 7;       // "raw_bgra" or "jpeg"
+}
+
+// ------------------------------------------------------------------
+// INPUT STREAM (User Actions)
+// ------------------------------------------------------------------
+message MouseEvent {
+    int64 timestamp = 1;
+    string type = 2;           // "click", "move", "scroll", "down", "up"
+    int32 x = 3;
+    int32 y = 4;
+    string button = 5;         // "left", "right", "middle"
+    int32 scroll_delta = 6;
+}
+
+message KeyboardEvent {
+    int64 timestamp = 1;
+    string type = 2;           // "press", "release"
+    string key = 3;            // "a", "ctrl", "enter"
+}
+
+// Metadata scraped from Windows UI Automation API
+message A11yNode {
+    string name = 1;           // "Save"
+    string control_type = 2;   // "Button"
+    string automation_id = 3;  // "File_Save_Btn"
+    repeated int32 bbox = 4;   // [x, y, w, h]
+    bool is_enabled = 5;
+}
+
+message UserInteraction {
+    int64 timestamp = 1;
+    oneof event {
+        MouseEvent mouse = 2;
+        KeyboardEvent keyboard = 3;
+    }
+    A11yNode accessibility_context = 4; // The element under the cursor
+    string active_window_title = 5;
+}
+
+// ------------------------------------------------------------------
+// AUDIO STREAM
+// ------------------------------------------------------------------
+message AudioChunk {
+    int64 timestamp = 1;
+    bytes data = 2;            // Raw PCM or Opus encoded bytes
+    int32 sample_rate = 3;     // e.g. 16000
+    bool is_speech = 4;        // VAD flag
+}
+
+// ------------------------------------------------------------------
+// AGENT COMMANDS (Brain -> Hands)
+// ------------------------------------------------------------------
+message AgentAction {
+    string id = 1;             // UUID for tracing
+    string action_type = 2;    // "click", "type", "hotkey", "exec_code"
+    
+    // Coordinates (for Click/Drag)
+    int32 x = 3;
+    int32 y = 4;
+    int32 end_x = 5;
+    int32 end_y = 6;
+    
+    // Payload (for Type/Code)
+    string text_payload = 7;
+    string key_combo = 8;      // "ctrl+c"
+    
+    // Robustness
+    bool requires_snapshot = 9; // Should Arrakis snapshot before this?
+    string target_os = 10;      // "windows" or "linux"
+}
+
+message ActionResult {
+    string request_id = 1;
+    bool success = 2;
+    string error_message = 3;
+    string stdout = 4;         // For code execution
+    string stderr = 5;
+}
+
+// ------------------------------------------------------------------
+// ENVELOPE (The Bus Message)
+// ------------------------------------------------------------------
+message BusEvent {
+    string event_id = 1;
+    string channel = 2;
+    int64 timestamp = 3;
+    
+    oneof payload {
+        VisualFrame visual = 4;
+        UserInteraction input = 5;
+        AudioChunk audio = 6;
+        AgentAction action = 7;
+        ActionResult result = 8;
+    }
+}

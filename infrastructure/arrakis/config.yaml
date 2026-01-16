@@ -1,0 +1,18 @@
+# Arrakis Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 7000
+  storage_path: "./storage" # Where VM images and snapshots are stored
+
+# Default MicroVM Specifications
+defaults:
+  kernel_path: "/var/lib/arrakis/vmlinux.bin" # Path to Firecracker/Cloud-Hypervisor kernel
+  rootfs_path: "./images/agent-sandbox.ext4"
+  vcpu_count: 2
+  mem_size_mib: 4096  # 4GB RAM for handling Chrome + Python Data Science
+  
+# Networking
+network:
+  bridge_name: "arrakis0"
+  ip_range: "172.16.0.0/24"
+  gateway_ip: "172.16.0.1"

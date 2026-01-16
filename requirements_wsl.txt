@@ -1,0 +1,30 @@
+# --- Core ---
+pydantic>=2.0
+pydantic-settings
+python-dotenv
+requests
+aiohttp
+redis
+protobuf
+grpcio-tools
+uvloop              # Linux-only optimization
+
+# --- AI & Processing ---
+numpy
+opencv-python-headless
+pillow
+tiktoken
+
+# --- Agent Logic ---
+google-generativeai # Gemini SDK
+faster-whisper      # Local Audio Transcription
+
+# --- Infrastructure Clients ---
+# docker              # To control Coding Agent container
+# py-arrakis      # Install from source/git if not on PyPI yet: git+https://github.com/abshkbh/arrakis.git
+
+# --- Fine-Tuning (The Flywheel) ---
+# unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
+# trl
+# peft
+# bitsandbytes
